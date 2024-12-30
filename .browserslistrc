@@ -1,0 +1,4 @@
+# Browsers that we support
+> 1%            #支持市场份额大于 1% 的浏览器。
+last 9 versions # 即支持各类浏览器最近的一个版本，当然这里的 1 是可变的数字
+not dead

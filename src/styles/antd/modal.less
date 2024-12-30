@@ -1,0 +1,66 @@
+.ant-modal {
+  &:not(.ant-modal-confirm) {
+    .ant-modal {
+      &-content {
+        padding: 0;
+      }
+
+      &-header {
+        padding: 16px 24px;
+        margin-bottom: 0;
+      }
+
+      &-close {
+        inset-inline-end: 24px;
+        top: 16px;
+
+        &-x {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 22px;
+          height: 22px;
+        }
+      }
+
+      &-body {
+        padding-inline: 24px;
+      }
+
+      &-footer {
+        padding: 16px 24px;
+        margin-top: 0;
+      }
+    }
+  }
+}
+
+.full-modal {
+  .ant-modal {
+    display: flex;
+    max-height: calc(100vh - 124px);
+    padding-bottom: 0;
+
+    &-content {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+    }
+
+    &-header,
+    &-footer {
+      flex-shrink: 0;
+    }
+
+    &-body {
+      flex: 1;
+      overflow: auto;
+    }
+  }
+
+  &.ant-modal-centered {
+    .ant-modal {
+      display: inline-flex;
+    }
+  }
+}

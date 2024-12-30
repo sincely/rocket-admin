@@ -1,0 +1,259 @@
+<template>
+  <div class="x-transfer-list">
+    <!--header-->
+    <a-space class="x-transfer-list__header">
+      <template v-if="showCheckAllComputed">
+        <a-checkbox :checked="checkedAll" @change="onItemCheckAllChange">全选</a-checkbox>
+      </template>
+      <template v-if="isRightComputed">
+        <div class="x-transfer__count">
+          <slot :count="dataSource.length" :direction="direction" name="selectedText">
+            已选 {{ dataSource.length }} 项
+          </slot>
+        </div>
+        <a-typography-link @click="handleClear">{{ clearText }}</a-typography-link>
+      </template>
+    </a-space>
+    <template v-if="isLeftComputed">
+      <!--搜索-->
+      <template v-if="showSearch">
+        <div class="x-transfer-list__search">
+          <a-input v-model:value="keyword" :placeholder="placeholder" allow-clear @change="onSearch">
+            <template #prefix>
+              <search-outlined class="color-placeholder"></search-outlined>
+            </template>
+          </a-input>
+        </div>
+      </template>
+      <!--面包屑-->
+      <div v-if="breadcrumb.length" class="x-transfer-list__breadcrumb">
+        <a-breadcrumb>
+          <a-breadcrumb-item @click="onBreadcrumb()">
+            <a>
+              <home-outlined></home-outlined>
+            </a>
+          </a-breadcrumb-item>
+          <a-breadcrumb-item
+            v-for="(item, index) in breadcrumb"
+            :key="item[fieldNames.value]"
+            @click="onBreadcrumb(item, index)"
+          >
+            <template v-if="index < breadcrumb.length - 1">
+              <a>{{ item[fieldNames.label] }}</a>
+            </template>
+            <template v-else>{{ item[fieldNames.label] }}</template>
+          </a-breadcrumb-item>
+        </a-breadcrumb>
+      </div>
+    </template>
+    <!--body-->
+    <div class="x-transfer-list__body">
+      <!--列表-->
+      <div ref="infiniteRef" class="x-transfer-list__content">
+        <transfer-list-item
+          v-for="item in dataSource"
+          :key="item[fieldNames.value]"
+          :checked="selectedKeys.includes(item[fieldNames.value])"
+          :direcrion="direction"
+          :record="item"
+        >
+          <template v-for="(_, key) in pick(slots, ['item'])" :key="key" #[key]="slotProps">
+            <slot :name="key" v-bind="getSlotProps(slotProps)"></slot>
+          </template>
+        </transfer-list-item>
+        <!--空状态-->
+        <template v-if="!dataSource.length">
+          <div class="x-transfer-list__empty">
+            <template v-if="isVNode(locale.emptyText)">
+              <component :is="locale.emptyText"></component>
+            </template>
+            <template v-else>
+              <empty :image="Empty.PRESENTED_IMAGE_SIMPLE">
+                <template #description>
+                  {{ locale.emptyText }}
+                </template>
+              </empty>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+    <!--footer-->
+    <template v-if="slots.footer">
+      <div class="x-transfer-list__footer">
+        <slot :direction="direction" name="footer"></slot>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { HomeOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { DIRECTION_ENUM } from './config'
+import TransferListItem from './TransferListItem.vue'
+import { useTransferInject, useTransferListProvide } from './context'
+import { computed, isVNode, nextTick, onMounted, ref, useSlots, watchEffect } from 'vue'
+import { every, pick } from 'lodash-es'
+import { getSlotProps } from '@/components/utils'
+import { Empty } from 'ant-design-vue'
+
+defineOptions({
+  name: 'XTransferList'
+})
+
+const props = defineProps({
+  direction: String,
+  dataSource: { type: Array, default: () => [] }
+})
+
+const slots = useSlots()
+const {
+  fieldNames,
+  selectedKeys,
+  clearText,
+  placeholder,
+  showSearch,
+  showCheckAll,
+  locale,
+  breadcrumb,
+  isDynamicLoadData,
+  keyword,
+  onItemCheckAll,
+  onClear,
+  onBreadcrumb,
+  initInfiniteScroll,
+  onLoadData,
+  onSearch
+} = useTransferInject()
+
+const checkedAll = ref(false)
+const infiniteRef = ref()
+
+const isLeftComputed = computed(() => DIRECTION_ENUM.is('left', props.direction))
+const isRightComputed = computed(() => DIRECTION_ENUM.is('right', props.direction))
+const showCheckAllComputed = computed(() => isLeftComputed.value && showCheckAll.value)
+
+watchEffect(() => {
+  if (DIRECTION_ENUM.is('left', props.direction)) {
+    checkedAll.value =
+      selectedKeys.value.length && props.dataSource.length
+        ? every(
+            props.dataSource.filter((item) => !item?.disabled),
+            (item) => selectedKeys.value.includes(item?.[fieldNames.value?.value])
+          )
+        : false
+  }
+})
+
+onMounted(async () => {
+  await nextTick()
+  if (isDynamicLoadData.value && isLeftComputed.value) {
+    initInfiniteScroll(infiniteRef.value, {
+      onLoad: () => {
+        onLoadData()
+      }
+    })
+  }
+})
+
+/**
+ * 清除
+ */
+function handleClear() {
+  onClear()
+}
+
+/**
+ * 全选发生改变
+ */
+function onItemCheckAllChange(e) {
+  checkedAll.value = e.target.checked
+  onItemCheckAll({ checked: checkedAll.value })
+}
+
+useTransferListProvide({
+  direction: computed(() => props.direction)
+})
+</script>
+
+<style lang="less" scoped>
+.x-transfer-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding-top: 12px;
+
+  &:first-child {
+    border-right: @color-border solid 1px;
+  }
+
+  &__header {
+    box-sizing: content-box;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    min-height: @control-height;
+    padding-inline: 12px;
+    margin-bottom: 8px;
+  }
+
+  &__search {
+    flex-shrink: 0;
+    padding-inline: 12px;
+    margin-bottom: 8px;
+  }
+
+  &__breadcrumb {
+    flex-shrink: 0;
+    padding-inline: 12px;
+    margin-bottom: 8px;
+
+    :deep(.ant-breadcrumb) {
+      a {
+        transition-property: color, background-color;
+      }
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex: auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__content {
+    flex: auto;
+    padding-inline: 4px;
+    margin: 0;
+    overflow: auto;
+  }
+
+  &__empty {
+    flex: none;
+    margin: auto;
+  }
+
+  &__loading-text,
+  &__finished-text,
+  &__error-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 8px;
+    color: @color-text-placeholder;
+  }
+
+  &__error-text {
+    cursor: pointer;
+  }
+
+  &__footer {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    padding: 8px 12px;
+  }
+}
+</style>

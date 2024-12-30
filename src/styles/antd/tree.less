@@ -1,0 +1,46 @@
+.ant-tree {
+  &.ant-tree-block-node {
+    .ant-tree-treenode {
+      padding-block: 0;
+      margin-block: 0 4px;
+      border-radius: @border-radius;
+      transition: all 0.2s;
+
+      &:hover {
+        background: @color-bg-text-hover;
+      }
+
+      // &.ant-tree-treenode-selected {
+      //   background: color(~`colorPalette('@{color-primary}', 1) `);
+
+      //   .x-action-btn {
+      //     &:hover {
+      //       background: color(~`colorPalette('@{color-primary}', 2) `);
+      //     }
+      //   }
+      // }
+    }
+
+    .ant-tree-switcher {
+      padding-block: 4px;
+    }
+
+    .ant-tree-checkbox {
+      margin-block-start: 0;
+    }
+
+    .ant-tree-node-content-wrapper {
+      &:hover {
+        background: transparent;
+      }
+
+      &.ant-tree-node-selected {
+        background: transparent;
+      }
+    }
+
+    .ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner::after {
+      border-radius: 1px;
+    }
+  }
+}
